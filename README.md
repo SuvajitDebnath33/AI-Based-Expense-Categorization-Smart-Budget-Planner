@@ -1,77 +1,97 @@
-# AI-Based Expense Categorization & Smart Budget Planner
+# AI-Based Expense Categorization Smart Budget Planner
 
-Production-style full-stack app using:
-- Backend: FastAPI + SQLAlchemy + Alembic + PostgreSQL
-- Frontend: React + TypeScript + Vite
-- ML: scikit-learn TF-IDF + Logistic Regression / Naive Bayes
+Full-stack personal finance workspace with transaction ingestion, ML-assisted categorization, per-user budgets, savings goals, alerts, and analytics.
 
-This repository now includes:
-- AI category prediction endpoint + retraining endpoint
-- Budget CRUD with usage/remaining/overspending metrics
-- Advanced analytics endpoints with optimized aggregation queries
-- Anomaly flagging (`current > 2x` rolling 3-month category average)
-- Expense forecasting with confidence interval
-- Savings goal tracking with progress and ETA
-- Notification system (budget threshold, anomaly, savings milestone)
-- Optional JWT route protection + AI endpoint rate limiting
+## Stack
 
-## Assumptions
+- Backend: FastAPI, SQLAlchemy, Alembic, PostgreSQL
+- Frontend: React, TypeScript, Vite, Tailwind CSS
+- ML: scikit-learn text classification with fallback logic for newer Python versions
+- Auth: JWT-based registration and login
 
-- Existing project is FastAPI-based (not Node/Express), so implementation follows Python architecture.
-- Existing data model has no users table; features requiring `user_id` use JWT `sub` if enabled, otherwise `DEFAULT_USER_ID` (default `1`).
-- Backward compatibility is preserved for existing endpoints (`/api/upload`, `/api/transactions`, `/api/analytics/summary`, `/api/forecast`, etc.).
+## Features
 
-## 1. Teammate Setup After Pull
+- Register and log in with isolated user data
+- Upload CSV transactions or add them manually
+- Predict categories from transaction text and amount
+- Override categories and submit correction feedback
+- Track budgets, savings goals, and notifications
+- Review analytics, trends, forecasts, alerts, and financial health
 
-### 1.1 Pull latest changes
-```powershell
-git pull origin <your-branch>
+## Project Structure
+
+```text
+.
+|-- backend/
+|   |-- app/
+|   |-- alembic/
+|   |-- requirements.txt
+|   `-- Dockerfile
+|-- frontend/
+|   |-- src/
+|   |-- package.json
+|   `-- Dockerfile
+|-- docker-compose.yml
+|-- schema.sql
+`-- sample_transactions.csv
 ```
 
-### 1.2 Create env files
+## Prerequisites
+
+- Docker Desktop, if using containers
+- Or:
+  - Python 3.12 or 3.13 recommended
+  - Node.js 20+
+  - PostgreSQL 16+
+
+## Environment Files
+
+Create local env files from the examples:
+
 ```powershell
 Copy-Item .env.example .env
 Copy-Item backend/.env.example backend/.env
 Copy-Item frontend/.env.example frontend/.env
 ```
 
-### 1.3 Configure ports globally (optional)
+Important defaults:
 
-| Service | Variable | Default |
-|---|---|---|
-| PostgreSQL | `DB_PORT` | `5432` |
-| Backend | `BACKEND_PORT` | `8001` |
-| Frontend | `FRONTEND_PORT` | `5173` |
+- Backend API: `http://localhost:8001/api`
+- Frontend app: `http://localhost:5173`
+- PostgreSQL: `localhost:5432`
+- `AUTH_REQUIRED=false` by default for local development
 
-If you change one, update corresponding URLs:
-- `VITE_API_BASE_URL`
-- `CORS_ORIGINS`
-- `CORS_ORIGIN_REGEX`
+Set `AUTH_REQUIRED=true` and replace `JWT_SECRET_KEY` before production use.
 
-## 2. Run with Docker (Recommended Team Flow)
+## Quick Start With Docker
 
 ```powershell
 docker compose up --build
 ```
 
-Default URLs:
+Services:
+
 - Frontend: `http://localhost:5173`
-- Backend: `http://localhost:8001/api`
+- Backend: `http://localhost:8001`
+- API base: `http://localhost:8001/api`
 - PostgreSQL: `localhost:5432`
 
-Stop:
+Stop the stack:
+
 ```powershell
 docker compose down
 ```
 
-Reset containers + DB volume:
+Reset containers and the database volume:
+
 ```powershell
 docker compose down -v
 ```
 
-## 3. Run Without Docker
+## Local Development
 
-### 3.1 Backend
+### Backend
+
 ```powershell
 cd backend
 python -m venv .venv
@@ -79,123 +99,109 @@ python -m venv .venv
 pip install -r requirements.txt
 alembic upgrade head
 python app/ml/train_model.py
-$env:BACKEND_PORT = "8001"
-uvicorn app.main:app --reload --host 0.0.0.0 --port $env:BACKEND_PORT
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 ```
 
-### 3.2 Frontend
+### Frontend
+
 Open another terminal:
+
 ```powershell
 cd frontend
 npm install
-$env:FRONTEND_PORT = "5173"
 npm run dev
 ```
 
-## 4. Migration Steps
+## Database and Migrations
 
-If DB already exists from older version:
+Apply migrations after pulling schema changes:
+
 ```powershell
 cd backend
 alembic upgrade head
 ```
 
-New migration applied:
-- `20260301_02_advanced_features.py`
+Current migration chain:
 
-Schema additions:
-- `transactions.anomaly_flag`
-- `budgets` table
-- `savings_goals` table
-- `notifications` table
-- additional performance indexes on transactions and new tables
+- `20260228_01_init`
+- `20260301_02_advanced_features`
+- `20260309_03_feedback_and_ml`
+- `20260309_04_users_and_auth`
 
-## 5. Important Environment Variables
+## Authentication Notes
 
-Backend:
-- `DATABASE_URL`
-- `CORS_ORIGINS`
-- `MODEL_PATH`
-- `ENVIRONMENT` (`development` or `production`)
-- `AUTH_REQUIRED` (`false` by default for non-breaking local dev)
-- `JWT_SECRET_KEY`
-- `JWT_ALGORITHM`
-- `DEFAULT_USER_ID`
-- `AI_RATE_LIMIT_PER_MINUTE`
+- Registration: `POST /api/auth/register`
+- Login: `POST /api/auth/login`
+- Current user: `GET /api/auth/me`
 
-Frontend:
-- `VITE_API_BASE_URL`
-- `FRONTEND_PORT`
+The frontend uses JWT auth and stores the bearer token in `localStorage`.
 
-## 6. API Endpoints
+## Main API Routes
 
-### Existing + maintained
+Transactions and ingestion:
+
 - `POST /api/upload`
+- `POST /api/upload-csv`
 - `POST /api/transactions`
-- `GET /api/transactions?limit=&offset=`
-- `PATCH /api/transactions/{id}/override`
+- `GET /api/transactions`
+- `PATCH /api/transactions/{transaction_id}/override`
+
+Auth and intelligence:
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/ai/predict-category`
+- `POST /api/ai/retrain-model`
+- `POST /api/categorize`
+- `POST /api/feedback`
+- `GET /api/budget-insights`
+
+Analytics and insights:
+
+- `GET /api/analytics`
 - `GET /api/analytics/summary`
 - `GET /api/analytics/categories`
 - `GET /api/analytics/monthly-trend`
-- `GET /api/alerts`
-- `GET /api/budget/recommendations`
-- `GET /api/forecast`
-- `GET /api/financial-health-score`
-- `GET /api/ai-summary`
-
-### New AI
-- `POST /api/ai/predict-category`
-- `POST /api/ai/retrain-model`
-
-### New Budget CRUD
-- `POST /api/budgets`
-- `GET /api/budgets`
-- `GET /api/budgets/{id}`
-- `PATCH /api/budgets/{id}`
-- `DELETE /api/budgets/{id}`
-
-### New Analytics
 - `GET /api/analytics/monthly-summary`
 - `GET /api/analytics/category-distribution`
 - `GET /api/analytics/income-vs-expense`
 - `GET /api/analytics/savings-rate`
 - `GET /api/analytics/forecast`
+- `GET /api/forecast`
+- `GET /api/alerts`
+- `GET /api/financial-health-score`
+- `GET /api/ai-summary`
+- `GET /api/budget/recommendations`
 
-### Savings Goals
+Budgets, goals, and notifications:
+
+- `POST /api/budgets`
+- `GET /api/budgets`
+- `GET /api/budgets/{budget_id}`
+- `PATCH /api/budgets/{budget_id}`
+- `DELETE /api/budgets/{budget_id}`
 - `POST /api/savings-goals`
 - `GET /api/savings-goals`
-- `PATCH /api/savings-goals/{id}/progress`
-- `DELETE /api/savings-goals/{id}`
-
-### Notifications
+- `PATCH /api/savings-goals/{goal_id}/progress`
+- `DELETE /api/savings-goals/{goal_id}`
 - `GET /api/notifications`
-- `PATCH /api/notifications/{id}`
+- `PATCH /api/notifications/{notification_id}`
 
-## 7. Security Notes
+## Sample Data
 
-- Route-level JWT dependency is implemented with optional enforcement.
-- Enable strict auth by setting:
-  - `AUTH_REQUIRED=true`
-  - secure `JWT_SECRET_KEY`
-- AI endpoints have in-memory rate limiting by client IP.
-- SQLAlchemy ORM is used for query safety.
-- In production mode (`ENVIRONMENT=production`), generic 500 error messages are returned.
+Use `sample_transactions.csv` to test uploads quickly from the UI or API.
 
-## 8. Frontend Integration Added
+Expected CSV headers:
 
-- Dashboard:
-  - AI quick category prediction
-  - live notifications panel (mark read)
-- Budget page:
-  - budget CRUD creation flow + utilization view
-  - savings goal creation + progress updates
-  - advanced forecast with confidence interval
-- Upload page:
-  - model retraining action
-  - anomaly flag visibility in upload result
+- `Date`
+- `Description`
+- `Amount`
 
-## 9. Notes
+## Notes
 
-- `sample_transactions.csv` can be used for quick testing.
-- If scikit-learn is unavailable (common on Python 3.14), retraining now falls back to a built-in Naive Bayes text model and still works.
+- `schema.sql` is included as a schema reference, but Alembic migrations are the source of truth for actual database setup.
+- On Python 3.14+, some scientific packages may be unavailable; retraining falls back to the in-project logic where applicable.
+- The backend root route `GET /` returns a simple service status message.
+navailable (common on Python 3.14), retraining now falls back to a built-in Naive Bayes text model and still works.
 - For best model quality, Python 3.12/3.13 with scikit-learn is still recommended.
