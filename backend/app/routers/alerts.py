@@ -14,9 +14,9 @@ router = APIRouter(prefix="", tags=["alerts"])
 @router.get("/alerts")
 def alerts(
     db: Session = Depends(get_db),
-    _: AuthUser = Depends(get_current_user),
+    user: AuthUser = Depends(get_current_user),
 ):
-    txs = db.query(Transaction).filter(Transaction.is_income.is_(False)).all()
+    txs = db.query(Transaction).filter(Transaction.user_id == user.user_id, Transaction.is_income.is_(False)).all()
     monthly_totals = defaultdict(float)
     category_monthly = defaultdict(lambda: defaultdict(float))
 

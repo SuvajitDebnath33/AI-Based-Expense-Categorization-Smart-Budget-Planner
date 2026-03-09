@@ -1,12 +1,18 @@
-import axios from "axios";
+import axios, { type AxiosProgressEvent } from "axios";
 
 import {
+  AnalyticsOverview,
+  AuthResponse,
   AppNotification,
   Budget,
+  BudgetInsights,
   BudgetRecommendation,
   CategoryPrediction,
+  CategorizeResult,
   SavingsGoal,
   Transaction,
+  UploadResponse,
+  UserProfile,
 } from "../types/transaction";
 
 const api = axios.create({
@@ -21,27 +27,51 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export const uploadCsv = async (file: File) => {
+export const uploadCsv = async (file: File, onUploadProgress?: (event: AxiosProgressEvent) => void) => {
   const form = new FormData();
   form.append("file", file);
-  const { data } = await api.post("/upload", form, {
+  const { data } = await api.post<UploadResponse>("/upload-csv", form, {
     headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress,
   });
-  return data as { inserted_count: number; duplicate_count: number; transactions: Transaction[] };
+  return data;
 };
+
+export const registerUser = async (payload: { full_name: string; email: string; password: string }) =>
+  (await api.post<AuthResponse>("/auth/register", payload)).data;
+
+export const loginUser = async (payload: { email: string; password: string }) =>
+  (await api.post<AuthResponse>("/auth/login", payload)).data;
+
+export const getCurrentUser = async () => (await api.get<UserProfile>("/auth/me")).data;
 
 export const addManualTransaction = async (payload: { date: string; description: string; amount: number }) =>
   (await api.post<Transaction>("/transactions", payload)).data;
 
-export const getTransactions = async (limit = 100, offset = 0) =>
-  (await api.get<Transaction[]>("/transactions", { params: { limit, offset } })).data;
+export const getTransactions = async (params?: {
+  limit?: number;
+  offset?: number;
+  search?: string;
+  category?: string;
+  confidence_lt?: number;
+  sort_by?: "date" | "amount" | "confidence";
+  sort_order?: "asc" | "desc";
+}) => (await api.get<Transaction[]>("/transactions", { params })).data;
 
 export const overrideCategory = async (transactionId: number, payload: { new_category: string; reason?: string }) =>
   (await api.patch<Transaction>(`/transactions/${transactionId}/override`, payload)).data;
 
+export const submitFeedback = async (payload: {
+  transaction_id?: number;
+  transaction_text: string;
+  predicted_category: string;
+  corrected_category: string;
+}) => (await api.post("/feedback", payload)).data;
+
 export const getSummary = async () => (await api.get("/analytics/summary")).data;
 export const getCategoryData = async () => (await api.get("/analytics/categories")).data;
 export const getMonthlyTrend = async () => (await api.get("/analytics/monthly-trend")).data;
+export const getAnalyticsOverview = async () => (await api.get<AnalyticsOverview>("/analytics")).data;
 export const getAlerts = async () => (await api.get("/alerts")).data;
 export const getBudgetRecommendations = async () =>
   (
@@ -53,11 +83,15 @@ export const getForecast = async () => (await api.get("/forecast")).data;
 export const getForecastAdvanced = async () => (await api.get("/analytics/forecast")).data;
 export const getHealthScore = async () => (await api.get("/financial-health-score")).data;
 export const getAiSummary = async () => (await api.get("/ai-summary")).data;
+export const getBudgetInsights = async () => (await api.get<BudgetInsights>("/budget-insights")).data;
 
-export const predictCategory = async (description: string) =>
-  (await api.post<CategoryPrediction>("/ai/predict-category", { description })).data;
+export const predictCategory = async (description: string, amount = 0) =>
+  (await api.post<CategoryPrediction>("/ai/predict-category", { description, amount })).data;
 
-export const retrainModel = async (algorithm: "logistic_regression" | "naive_bayes" = "logistic_regression") =>
+export const categorizeExpense = async (description: string, amount = 0) =>
+  (await api.post<CategorizeResult>("/categorize", { description, amount })).data;
+
+export const retrainModel = async (algorithm: "logistic_regression" | "random_forest" = "logistic_regression") =>
   (await api.post("/ai/retrain-model", { algorithm })).data;
 
 export const listBudgets = async (params?: { month?: number; year?: number; limit?: number; offset?: number }) =>

@@ -12,7 +12,7 @@ router = APIRouter(prefix="", tags=["forecast"])
 @router.get("/forecast")
 def forecast(
     db: Session = Depends(get_db),
-    _: AuthUser = Depends(get_current_user),
+    user: AuthUser = Depends(get_current_user),
 ):
-    txs = db.query(Transaction).all()
+    txs = db.query(Transaction).filter(Transaction.user_id == user.user_id).all()
     return forecast_next_month(txs)

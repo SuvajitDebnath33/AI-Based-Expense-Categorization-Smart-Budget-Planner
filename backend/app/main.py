@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.database import Base, engine
-from app.routers import ai, alerts, analytics, budget, budgets, forecast, health, notifications, savings_goals, transactions
+from app.routers import ai, alerts, analytics, auth, budget, budgets, forecast, health, intelligence, notifications, savings_goals, transactions
 
 app = FastAPI(title=settings.app_name)
 
@@ -18,8 +18,10 @@ app.add_middleware(
 )
 
 app.include_router(transactions.router, prefix=settings.api_prefix)
+app.include_router(auth.router, prefix=settings.api_prefix)
 app.include_router(ai.router, prefix=settings.api_prefix)
 app.include_router(analytics.router, prefix=settings.api_prefix)
+app.include_router(intelligence.router, prefix=settings.api_prefix)
 app.include_router(alerts.router, prefix=settings.api_prefix)
 app.include_router(budget.router, prefix=settings.api_prefix)
 app.include_router(budgets.router, prefix=settings.api_prefix)
