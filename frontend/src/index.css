@@ -1,11 +1,136 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+  --bg: #081218;
+  --panel: rgba(11, 26, 33, 0.82);
+  --panel-strong: #10232d;
+  --line: rgba(134, 180, 198, 0.18);
+  --text: #ecf6f8;
+  --muted: #91a9b3;
+  --accent: #68e1c2;
+  --accent-strong: #2bb0a5;
+  --danger: #ff7d6b;
+  --warning: #f1c75b;
+}
+
+html {
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.14), transparent 28%),
+    radial-gradient(circle at top right, rgba(104, 225, 194, 0.12), transparent 24%),
+    linear-gradient(180deg, #071015 0%, #081218 46%, #060d12 100%);
+}
+
 body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: "Space Grotesk", "Aptos", "Segoe UI Variable Text", sans-serif;
+  background: transparent;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.panel {
+  @apply rounded-[28px] border p-5 shadow-2xl;
+  border-color: var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(16px);
 }
 
 .card {
-  @apply rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-md;
+  @apply panel;
+}
+
+.panel-strong {
+  background: linear-gradient(180deg, rgba(16, 35, 45, 0.96), rgba(10, 24, 31, 0.92));
+}
+
+.kpi {
+  @apply panel panel-strong relative overflow-hidden;
+}
+
+.kpi::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -30% auto;
+  width: 9rem;
+  height: 9rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(104, 225, 194, 0.16), transparent 65%);
+}
+
+.field {
+  @apply w-full rounded-2xl border px-4 py-3 text-sm outline-none transition;
+  border-color: rgba(134, 180, 198, 0.2);
+  background: rgba(8, 19, 24, 0.86);
+}
+
+.field:focus {
+  border-color: rgba(104, 225, 194, 0.6);
+  box-shadow: 0 0 0 1px rgba(104, 225, 194, 0.35);
+}
+
+.button-primary {
+  @apply inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: #06222a;
+}
+
+.button-primary:disabled {
+  @apply cursor-not-allowed opacity-60;
+}
+
+.button-secondary {
+  @apply inline-flex items-center justify-center rounded-2xl border px-4 py-3 text-sm font-semibold transition;
+  border-color: rgba(134, 180, 198, 0.24);
+  background: rgba(8, 19, 24, 0.72);
+  color: var(--text);
+}
+
+.button-secondary:disabled {
+  @apply cursor-not-allowed opacity-60;
+}
+
+.pill {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium;
+  background: rgba(104, 225, 194, 0.12);
+  color: #8cf0d8;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.table-shell {
+  @apply overflow-hidden rounded-[24px] border;
+  border-color: var(--line);
+  background: rgba(7, 16, 21, 0.78);
+}
+
+.table-shell table {
+  @apply w-full text-sm;
+}
+
+.table-shell th {
+  @apply px-4 py-3 text-left text-xs uppercase tracking-[0.22em];
+  color: #7f99a3;
+}
+
+.table-shell td {
+  @apply px-4 py-3 align-top;
+  border-top: 1px solid rgba(134, 180, 198, 0.1);
+}
+
+.progress-track {
+  @apply h-2 overflow-hidden rounded-full;
+  background: rgba(116, 143, 156, 0.16);
+}
+
+.progress-fill {
+  @apply h-full rounded-full;
+  background: linear-gradient(90deg, #68e1c2 0%, #56c8ff 100%);
 }

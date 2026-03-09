@@ -1,10 +1,10 @@
-﻿from collections import defaultdict
+from collections import defaultdict
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import MonthlySummary, Transaction
+from app.models import Transaction
 from app.security.auth import AuthUser, get_current_user
 
 router = APIRouter(prefix="", tags=["health"])
@@ -81,27 +81,18 @@ def _calculate_health(txs: list[Transaction]) -> dict:
 @router.get("/financial-health-score")
 def financial_health_score(
     db: Session = Depends(get_db),
-    _: AuthUser = Depends(get_current_user),
+    user: AuthUser = Depends(get_current_user),
 ):
-    txs = db.query(Transaction).all()
-    data = _calculate_health(txs)
-    if txs:
-        month = max(t.date for t in txs).strftime("%Y-%m")
-        income = sum(abs(t.amount_inr) for t in txs if t.is_income and t.date.strftime("%Y-%m") == month)
-        expense = sum(abs(t.amount_inr) for t in txs if (not t.is_income) and t.date.strftime("%Y-%m") == month)
-        summary = db.query(MonthlySummary).filter(MonthlySummary.month == month).first()
-        if not summary:
-            db.add(MonthlySummary(month=month, total_income=income, total_expense=expense, net_savings=income - expense, health_score=data["score"], ai_summary=f"This month income is INR {income:.0f}, expense is INR {expense:.0f}, health score {data['score']:.0f}."))
-            db.commit()
-    return data
+    txs = db.query(Transaction).filter(Transaction.user_id == user.user_id).all()
+    return _calculate_health(txs)
 
 
 @router.get("/ai-summary")
 def ai_summary(
     db: Session = Depends(get_db),
-    _: AuthUser = Depends(get_current_user),
+    user: AuthUser = Depends(get_current_user),
 ):
-    txs = db.query(Transaction).all()
+    txs = db.query(Transaction).filter(Transaction.user_id == user.user_id).all()
     if not txs:
         return {"summary": "Upload transactions to generate insights."}
 
@@ -121,8 +112,8 @@ def ai_summary(
 
     text = f"Highest spending category was {top} (INR {top_value:.0f})."
     if previous:
-        p, c = monthly[previous], monthly[current]
-        if p > 0:
-            text += f" Total expenses changed by {((c - p) / p) * 100:.1f}% from last month."
+        previous_total, current_total = monthly[previous], monthly[current]
+        if previous_total > 0:
+            text += f" Total expenses changed by {((current_total - previous_total) / previous_total) * 100:.1f}% from last month."
     text += f" You can potentially save INR {top_value * 0.15:.0f} by optimizing this category."
     return {"summary": text}

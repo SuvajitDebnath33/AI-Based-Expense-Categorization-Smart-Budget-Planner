@@ -6,14 +6,31 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 
+class User(Base):
+    __tablename__ = "users"
+    __table_args__ = (
+        Index("ix_users_email", "email", unique=True),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    full_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+
 class Transaction(Base):
     __tablename__ = "transactions"
     __table_args__ = (
+        UniqueConstraint("user_id", "source_hash", name="uq_transactions_user_source_hash"),
+        Index("ix_transactions_user_date", "user_id", "date"),
         Index("ix_transactions_date_is_income", "date", "is_income"),
         Index("ix_transactions_category_date", "category", "date"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True, default=1)
     date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     description: Mapped[str] = mapped_column(String(300), nullable=False)
     clean_description: Mapped[str] = mapped_column(String(300), nullable=False)
@@ -27,7 +44,7 @@ class Transaction(Base):
     is_subscription: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     anomaly_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
     recurrence: Mapped[str] = mapped_column(String(20), nullable=False, default="none")
-    source_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    source_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
     overrides: Mapped[list["CategoryOverride"]] = relationship(back_populates="transaction")
@@ -44,6 +61,22 @@ class CategoryOverride(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
     transaction: Mapped[Transaction] = relationship(back_populates="overrides")
+
+
+class UserFeedback(Base):
+    __tablename__ = "user_feedback"
+    __table_args__ = (
+        Index("ix_user_feedback_created_at", "created_at"),
+        Index("ix_user_feedback_user_id", "user_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True, default=1)
+    transaction_id: Mapped[int] = mapped_column(ForeignKey("transactions.id"), nullable=True, index=True)
+    transaction_text: Mapped[str] = mapped_column(String(300), nullable=False)
+    predicted_category: Mapped[str] = mapped_column(String(100), nullable=False)
+    corrected_category: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
 
 class BudgetRecommendation(Base):
