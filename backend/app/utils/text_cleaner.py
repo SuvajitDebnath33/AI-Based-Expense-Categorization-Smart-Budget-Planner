@@ -1,8 +1,10 @@
-﻿import hashlib
+import hashlib
 import re
-from datetime import date, datetime
+from datetime import date
 
 from dateutil import parser as date_parser
+
+from app.ml.preprocess import clean_transaction_description, normalize_merchant_name
 
 
 FX_RATES_TO_INR = {
@@ -14,10 +16,7 @@ FX_RATES_TO_INR = {
 
 
 def clean_text(text: str) -> str:
-    lowered = (text or "").lower().strip()
-    lowered = re.sub(r"[^a-z0-9\s]", " ", lowered)
-    lowered = re.sub(r"\s+", " ", lowered).strip()
-    return lowered
+    return clean_transaction_description(text)
 
 
 def infer_currency(raw_amount: str) -> str:
@@ -45,8 +44,7 @@ def parse_date(value: str) -> date:
 
 
 def merchant_from_description(clean_description: str) -> str:
-    tokens = clean_description.split()
-    return " ".join(tokens[:3]) if tokens else "unknown"
+    return normalize_merchant_name(clean_description)
 
 
 def source_hash(tx_date: date, description: str, amount_inr: float) -> str:

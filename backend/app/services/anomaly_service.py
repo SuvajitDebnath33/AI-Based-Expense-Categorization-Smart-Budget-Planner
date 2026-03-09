@@ -9,6 +9,7 @@ from app.models import Transaction
 def is_anomalous_expense(
     db: Session,
     *,
+    user_id: int,
     tx_date: date,
     category: str,
     amount_inr: float,
@@ -21,6 +22,7 @@ def is_anomalous_expense(
     avg_recent = (
         db.query(func.avg(func.abs(Transaction.amount_inr)))
         .filter(
+            Transaction.user_id == user_id,
             Transaction.is_income.is_(False),
             Transaction.category == category,
             Transaction.date >= window_start,

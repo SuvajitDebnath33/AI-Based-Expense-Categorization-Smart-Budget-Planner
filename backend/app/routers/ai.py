@@ -17,21 +17,34 @@ predict_service = CategorizationService(settings.model_path)
 @router.post("/predict-category", response_model=CategoryPredictionOut, dependencies=[Depends(ai_rate_limit)])
 def predict_category(
     payload: CategoryPredictionIn,
-    _: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    user: AuthUser = Depends(get_current_user),
 ):
-    category, confidence = predict_service.predict(payload.description.strip())
-    return {"category": category, "confidence": round(confidence, 4)}
+    history_rows = AIRepository(db).prediction_history(user.user_id)
+    prediction = predict_service.predict(
+        description=payload.description.strip(),
+        amount=payload.amount,
+        history_rows=history_rows,
+    )
+    return {
+        "category": prediction["predicted_category"],
+        "confidence": round(prediction["confidence"], 4),
+        "merchant": prediction["merchant"],
+        "merchant_logo_url": prediction.get("merchant_logo"),
+        "model_source": prediction["model_source"],
+    }
 
 
 @router.post("/retrain-model", response_model=RetrainModelOut, dependencies=[Depends(ai_rate_limit)])
 def retrain(
     payload: RetrainModelIn,
     db: Session = Depends(get_db),
-    _: AuthUser = Depends(get_current_user),
+    user: AuthUser = Depends(get_current_user),
 ):
     repo = AIRepository(db)
-    dataset = repo.training_dataset()
-    overrides_used = repo.override_count()
+    dataset = repo.training_dataset(user.user_id)
+    overrides_used = repo.override_count(user.user_id)
+    feedback_samples = repo.feedback_count(user.user_id)
 
     try:
         result = retrain_model(dataset=dataset, model_path=settings.model_path, algorithm=payload.algorithm)
@@ -40,7 +53,6 @@ def retrain(
 
     predict_service.reload_model()
 
-    # Reload shared transaction predictor so uploads and manual create use updated model.
     from app.routers.transactions import service as transaction_service
 
     transaction_service.reload_model()
@@ -48,5 +60,6 @@ def retrain(
     return {
         **result,
         "overrides_used": overrides_used,
+        "feedback_samples": feedback_samples,
         "status": "retrained",
     }

@@ -17,6 +17,8 @@ class TransactionOut(BaseModel):
     is_subscription: bool
     anomaly_flag: bool
     recurrence: str
+    merchant_logo_url: str | None = None
+    low_confidence: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -76,17 +78,53 @@ class ApiMessage(BaseModel):
     timestamp: datetime
 
 
+class RegisterIn(BaseModel):
+    full_name: str = Field(min_length=2, max_length=150)
+    email: str = Field(min_length=5, max_length=255)
+    password: str = Field(min_length=8, max_length=128)
+
+
+class LoginIn(BaseModel):
+    email: str = Field(min_length=5, max_length=255)
+    password: str = Field(min_length=8, max_length=128)
+
+
+class AuthUserOut(BaseModel):
+    id: int
+    full_name: str
+    email: str
+
+
+class AuthTokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: AuthUserOut
+
+
 class CategoryPredictionIn(BaseModel):
     description: str = Field(min_length=2, max_length=300)
+    amount: float = 0.0
 
 
 class CategoryPredictionOut(BaseModel):
     category: str
     confidence: float
+    merchant: str
+    merchant_logo_url: str | None = None
+    model_source: str
+
+
+class CategorizeResponse(BaseModel):
+    description: str
+    predicted_category: str
+    confidence: float
+    merchant: str
+    merchant_logo_url: str | None = None
+    model_source: str
 
 
 class RetrainModelIn(BaseModel):
-    algorithm: str = Field(default="logistic_regression", pattern="^(logistic_regression|naive_bayes)$")
+    algorithm: str = Field(default="logistic_regression", pattern="^(logistic_regression|random_forest)$")
 
 
 class RetrainModelOut(BaseModel):
@@ -95,6 +133,8 @@ class RetrainModelOut(BaseModel):
     trained_samples: int
     distinct_categories: int
     overrides_used: int
+    feedback_samples: int
+    text_embedding_backend: str
     status: str
 
 
@@ -164,3 +204,21 @@ class NotificationOut(BaseModel):
 
 class NotificationReadIn(BaseModel):
     is_read: bool = True
+
+
+class FeedbackIn(BaseModel):
+    transaction_id: int | None = None
+    transaction_text: str = Field(min_length=2, max_length=300)
+    predicted_category: str = Field(min_length=2, max_length=100)
+    corrected_category: str = Field(min_length=2, max_length=100)
+
+
+class FeedbackOut(BaseModel):
+    id: int
+    transaction_id: int | None = None
+    transaction_text: str
+    predicted_category: str
+    corrected_category: str
+    timestamp: datetime
+
+    model_config = {"from_attributes": True}

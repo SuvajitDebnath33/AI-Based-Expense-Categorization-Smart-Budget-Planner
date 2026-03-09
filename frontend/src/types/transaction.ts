@@ -12,6 +12,8 @@ export type Transaction = {
   is_subscription: boolean;
   anomaly_flag: boolean;
   recurrence: string;
+  merchant_logo_url?: string | null;
+  low_confidence?: boolean;
 };
 
 export type AlertItem = {
@@ -62,4 +64,82 @@ export type AppNotification = {
 export type CategoryPrediction = {
   category: string;
   confidence: number;
+  merchant: string;
+  merchant_logo_url?: string | null;
+  model_source: string;
+};
+
+export type CategorizeResult = {
+  description: string;
+  predicted_category: string;
+  confidence: number;
+  merchant: string;
+  merchant_logo_url?: string | null;
+  model_source: string;
+};
+
+export type AnalyticsOverview = {
+  overview: {
+    month: string;
+    total_spending: number;
+    monthly_budget: number;
+    top_category: string;
+    remaining_budget: number;
+  };
+  category_distribution: { category: string; amount: number }[];
+  monthly_category_spending: { month: string; category: string; amount: number }[];
+  forecast: {
+    month: string;
+    predicted_amount: number;
+    confidence_interval?: [number, number] | null;
+  };
+  duplicates: { description: string; amount: number; count: number }[];
+  subscriptions: { merchant: string; recurrence: string; average_amount: number }[];
+  insights: string[];
+};
+
+export type BudgetInsights = {
+  overview: {
+    month: string;
+    total_spending: number;
+    monthly_budget: number;
+    top_category: string;
+    remaining_budget: number;
+  };
+  budgets: {
+    category: string;
+    limit: number;
+    spent: number;
+    remaining: number;
+    percentage_used: number;
+    exceeded: boolean;
+  }[];
+  alerts: string[];
+  forecast: {
+    month: string;
+    predicted_amount: number;
+    confidence_interval?: [number, number] | null;
+  };
+  monthly_category_spending: { month: string; category: string; amount: number }[];
+  subscriptions: { merchant: string; recurrence: string; average_amount: number }[];
+  duplicates: { description: string; amount: number; count: number }[];
+  insights: string[];
+};
+
+export type UploadResponse = {
+  inserted_count: number;
+  duplicate_count: number;
+  transactions: Transaction[];
+};
+
+export type UserProfile = {
+  id: number;
+  full_name: string;
+  email: string;
+};
+
+export type AuthResponse = {
+  access_token: string;
+  token_type: string;
+  user: UserProfile;
 };

@@ -11,9 +11,10 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
     cors_origin_regex: str = r"https?://(localhost|127\.0\.0\.1)(:\d+)?$"
     model_path: str = "app/ml/ml_model.pkl"
-    auth_required: bool = False
+    auth_required: bool = True
     jwt_secret_key: str = "dev-insecure-secret"
     jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 1440
     default_user_id: int = 1
     ai_rate_limit_per_minute: int = 30
 
