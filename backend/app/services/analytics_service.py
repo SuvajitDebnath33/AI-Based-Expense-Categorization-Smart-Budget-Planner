@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Budget, SavingsGoal, Transaction, UserFeedback
 from app.repositories.analytics_repository import AnalyticsRepository
-from app.services.forecast_engine import forecast_next_month_advanced
+from app.services.forecast_engine import forecast_next_month_advanced, forecast_next_month_savings
 
 
 class AnalyticsService:
@@ -142,6 +142,10 @@ class AnalyticsService:
     def forecast(self) -> dict:
         txs = self._transactions_query().all()
         return forecast_next_month_advanced(txs)
+
+    def savings_forecast(self) -> dict:
+        txs = self._transactions_query().all()
+        return forecast_next_month_savings(txs)
 
     def _recurrence_days(self, txs: list[Transaction], fallback: int = 30) -> int:
         if not txs:
@@ -577,6 +581,7 @@ class AnalyticsService:
             "budgets": budget_rows,
             "alerts": alerts,
             "forecast": forecast,
+            "savings_forecast": self.savings_forecast(),
             "behavioral_forecast": self.behavioral_budget_forecast(),
             "monthly_category_spending": self.monthly_category_spending(),
             "subscriptions": self.subscriptions(),

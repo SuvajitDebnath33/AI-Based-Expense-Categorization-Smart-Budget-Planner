@@ -17,6 +17,15 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 1440
     default_user_id: int = 1
     ai_rate_limit_per_minute: int = 30
+    email_notifications_enabled: bool = False
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from_email: str | None = None
+    smtp_from_name: str = "Smart Budget Planner"
+    smtp_use_tls: bool = True
+    smtp_use_ssl: bool = False
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -127,6 +127,80 @@ export type SavingsGoal = {
   months_remaining: number | null;
 };
 
+export type WishlistItem = {
+  id: number;
+  user_id: number;
+  title: string;
+  target_amount: number;
+  priority: number;
+  notes?: string | null;
+  allocated_saved: number;
+  remaining_target: number;
+  completion_percentage: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InstantSavingsEntry = {
+  id: number;
+  user_id: number;
+  wishlist_id?: number | null;
+  wishlist_title?: string | null;
+  amount: number;
+  note?: string | null;
+  created_at: string;
+};
+
+export type SavingsForecast = {
+  current_month: string;
+  current_month_income: number;
+  current_month_expense: number;
+  current_month_savings: number;
+  next_month: string;
+  predicted_next_month_income: number;
+  predicted_next_month_expense: number;
+  predicted_next_month_savings: number;
+};
+
+export type WishlistCombination = {
+  combo_key: string;
+  horizon: "now" | "next_cycle" | string;
+  items: {
+    id: number;
+    title: string;
+    target_amount: number;
+    priority: number;
+    notes?: string | null;
+    allocated_saved: number;
+    remaining_target: number;
+    completion_percentage: number;
+  }[];
+  total_cost: number;
+  remaining_savings: number;
+  utilization: number;
+  priority_score: number;
+  recommended: boolean;
+  summary: string;
+};
+
+export type WishlistPlan = {
+  current_month: string;
+  next_month: string;
+  current_month_savings: number;
+  current_month_transaction_savings: number;
+  current_month_instant_savings: number;
+  current_month_allocated_savings: number;
+  current_month_available_savings: number;
+  predicted_next_month_savings: number;
+  next_cycle_savings_capacity: number;
+  wishlist_count: number;
+  considered_wishlist_count: number;
+  immediately_affordable: WishlistCombination[];
+  next_cycle_affordable: WishlistCombination[];
+  recent_savings_entries: InstantSavingsEntry[];
+  suggestion_summary: string[];
+};
+
 export type AppNotification = {
   id: number;
   type: string;
@@ -194,6 +268,7 @@ export type BudgetInsights = {
     predicted_amount: number;
     confidence_interval?: [number, number] | null;
   };
+  savings_forecast: SavingsForecast;
   behavioral_forecast: {
     month: string;
     anchor_date: string;

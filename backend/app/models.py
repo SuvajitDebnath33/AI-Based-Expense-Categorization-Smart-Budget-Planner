@@ -147,3 +147,32 @@ class Notification(Base):
     message: Mapped[str] = mapped_column(Text, nullable=False)
     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+
+class WishlistItem(Base):
+    __tablename__ = "wishlist_items"
+    __table_args__ = (Index("ix_wishlist_items_user_priority", "user_id", "priority", "created_at"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(150), nullable=False)
+    target_amount: Mapped[float] = mapped_column(Float, nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    notes: Mapped[str] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class InstantSavingsEntry(Base):
+    __tablename__ = "instant_savings_entries"
+    __table_args__ = (
+        Index("ix_instant_savings_entries_user_created", "user_id", "created_at"),
+        Index("ix_instant_savings_entries_user_wishlist_created", "user_id", "wishlist_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    wishlist_id: Mapped[int] = mapped_column(Integer, ForeignKey("wishlist_items.id"), nullable=True, index=True)
+    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    note: Mapped[str] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, index=True)
