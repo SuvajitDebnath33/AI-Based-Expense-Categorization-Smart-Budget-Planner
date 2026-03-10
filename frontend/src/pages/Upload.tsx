@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
 
-import { retrainModel, uploadCsv } from "../services/api";
+import { addManualTransaction, retrainModel, uploadCsv } from "../services/api";
 import type { Transaction } from "../types/transaction";
 import { inr, percent } from "../utils/format";
 
@@ -11,13 +11,28 @@ type PreviewRow = {
   Amount: string;
 };
 
+type ManualFormState = {
+  date: string;
+  description: string;
+  amount: string;
+  entryType: "expense" | "income";
+};
+
 const REQUIRED_COLUMNS = ["Date", "Description", "Amount"];
+
+const createInitialManualForm = (): ManualFormState => ({
+  date: new Date().toISOString().slice(0, 10),
+  description: "",
+  amount: "",
+  entryType: "expense",
+});
 
 function parsePreview(text: string): PreviewRow[] {
   const [headerLine, ...body] = text.split(/\r?\n/).filter(Boolean);
   if (!headerLine) {
     return [];
   }
+
   const headers = headerLine.split(",").map((item) => item.trim());
   return body.slice(0, 8).map((line) => {
     const values = line.split(",").map((item) => item.trim());
@@ -37,13 +52,20 @@ export default function Upload() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [retraining, setRetraining] = useState<"idle" | "logistic_regression" | "random_forest">("idle");
   const [dragActive, setDragActive] = useState(false);
+  const [manualForm, setManualForm] = useState<ManualFormState>(createInitialManualForm);
+  const [manualSubmitting, setManualSubmitting] = useState(false);
 
   const isValid = useMemo(() => missingColumns.length === 0 && !!file, [missingColumns.length, file]);
+  const hasManualDraft = useMemo(
+    () => Boolean(manualForm.date && manualForm.description.trim() && manualForm.amount.trim()),
+    [manualForm.amount, manualForm.date, manualForm.description],
+  );
 
   const handleFile = async (nextFile: File | null) => {
     setFile(nextFile);
     setRows([]);
     setUploadProgress(0);
+
     if (!nextFile) {
       setPreviewRows([]);
       setMissingColumns([]);
@@ -79,6 +101,36 @@ export default function Upload() {
     }
   };
 
+  const handleManualSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const description = manualForm.description.trim();
+    const amount = Number(manualForm.amount);
+
+    if (!manualForm.date || description.length < 2 || !Number.isFinite(amount) || amount <= 0) {
+      toast.error("Enter a date, description, and amount greater than zero.");
+      return;
+    }
+
+    setManualSubmitting(true);
+    try {
+      const normalizedAmount = manualForm.entryType === "income" ? -amount : amount;
+      const transaction = await addManualTransaction({
+        date: manualForm.date,
+        description,
+        amount: normalizedAmount,
+      });
+
+      setRows((current) => [transaction, ...current]);
+      setManualForm(createInitialManualForm());
+      toast.success("Transaction added and categorized.");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.detail || "Could not add the transaction.");
+    } finally {
+      setManualSubmitting(false);
+    }
+  };
+
   const handleRetrain = async (algorithm: "logistic_regression" | "random_forest") => {
     setRetraining(algorithm);
     try {
@@ -98,7 +150,8 @@ export default function Upload() {
           <p className="text-xs uppercase tracking-[0.26em] text-slate-500">CSV intake</p>
           <h2 className="mt-2 text-2xl font-semibold">Drag, validate, upload</h2>
           <p className="mt-2 max-w-xl text-sm muted">
-            Upload bank or wallet exports with `Date`, `Description`, and `Amount`. The app previews rows before import, validates columns, flags duplicates, and stores model confidence.
+            Upload bank or wallet exports with `Date`, `Description`, and `Amount`. The app previews rows before import,
+            validates columns, flags duplicates, and stores model confidence.
           </p>
 
           <label
@@ -126,7 +179,8 @@ export default function Upload() {
                 void handleFile(event.target.files?.[0] || null);
               }}
             />
-            <p className="text-lg font-medium">{file ? file.name : "Drop CSV here or click to choose a file"}</p>
+            <p className="text-lg font-medium">{file ? file.name : "Drop CSV here or click to browse"}</p>
+            <p className="mt-2 max-w-sm text-sm muted">Required columns: Date, Description, Amount</p>
             <p className="mt-2 text-sm muted">Max preview: first 8 rows</p>
           </label>
 
@@ -161,32 +215,118 @@ export default function Upload() {
           </div>
         </div>
 
-        <div className="panel">
-          <p className="text-xs uppercase tracking-[0.26em] text-slate-500">Preview</p>
-          <h3 className="mt-2 text-xl font-semibold">Column validation</h3>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {REQUIRED_COLUMNS.map((column) => (
-              <span
-                key={column}
-                className={[
-                  "rounded-full px-3 py-1 text-xs font-medium",
-                  missingColumns.includes(column) ? "bg-rose-300/12 text-rose-200" : "bg-emerald-300/12 text-emerald-100",
-                ].join(" ")}
-              >
-                {column}
-              </span>
-            ))}
-          </div>
-          <div className="mt-5 space-y-3">
-            {previewRows.length === 0 && <p className="text-sm muted">No preview available yet.</p>}
-            {previewRows.map((row, index) => (
-              <div key={`${row.Description}-${index}`} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4 text-sm">
-                <p className="font-medium">{row.Description}</p>
-                <p className="mt-1 muted">
-                  {row.Date} • {row.Amount}
-                </p>
+        <div className="space-y-6">
+          <div className="panel">
+            <p className="text-xs uppercase tracking-[0.26em] text-slate-500">Manual entry</p>
+            <h3 className="mt-2 text-xl font-semibold">Add one transaction</h3>
+            <p className="mt-2 text-sm muted">
+              Add a single expense or income without changing the CSV upload flow. The transaction is categorized the same way after save.
+            </p>
+
+            <form className="mt-5 space-y-4" onSubmit={(event) => void handleManualSubmit(event)}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="muted">Date</span>
+                  <input
+                    type="date"
+                    className="field"
+                    value={manualForm.date}
+                    onChange={(event) => setManualForm((current) => ({ ...current, date: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="muted">Type</span>
+                  <select
+                    className="field"
+                    value={manualForm.entryType}
+                    onChange={(event) =>
+                      setManualForm((current) => ({
+                        ...current,
+                        entryType: event.target.value as ManualFormState["entryType"],
+                      }))
+                    }
+                  >
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                  </select>
+                </label>
               </div>
-            ))}
+
+              <label className="block space-y-2 text-sm">
+                <span className="muted">Description</span>
+                <input
+                  type="text"
+                  className="field"
+                  placeholder="e.g. Zomato order, salary credit, metro recharge"
+                  value={manualForm.description}
+                  onChange={(event) => setManualForm((current) => ({ ...current, description: event.target.value }))}
+                  maxLength={300}
+                  required
+                />
+              </label>
+
+              <label className="block space-y-2 text-sm">
+                <span className="muted">Amount</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  className="field"
+                  placeholder="0.00"
+                  value={manualForm.amount}
+                  onChange={(event) => setManualForm((current) => ({ ...current, amount: event.target.value }))}
+                  required
+                />
+              </label>
+
+              <div className="flex flex-wrap gap-3">
+                <button className="button-primary" type="submit" disabled={manualSubmitting}>
+                  {manualSubmitting ? "Saving..." : "Add transaction"}
+                </button>
+                <button
+                  className="button-secondary"
+                  type="button"
+                  disabled={!hasManualDraft || manualSubmitting}
+                  onClick={() => setManualForm(createInitialManualForm())}
+                >
+                  Reset form
+                </button>
+              </div>
+
+              <p className="text-xs muted">
+                Choose income or expense and enter a positive amount. Income is stored automatically with the right sign.
+              </p>
+            </form>
+          </div>
+
+          <div className="panel">
+            <p className="text-xs uppercase tracking-[0.26em] text-slate-500">Preview</p>
+            <h3 className="mt-2 text-xl font-semibold">Column validation</h3>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {REQUIRED_COLUMNS.map((column) => (
+                <span
+                  key={column}
+                  className={[
+                    "rounded-full px-3 py-1 text-xs font-medium",
+                    missingColumns.includes(column) ? "bg-rose-300/12 text-rose-200" : "bg-emerald-300/12 text-emerald-100",
+                  ].join(" ")}
+                >
+                  {column}
+                </span>
+              ))}
+            </div>
+            <div className="mt-5 space-y-3">
+              {previewRows.length === 0 && <p className="text-sm muted">No CSV preview available yet.</p>}
+              {previewRows.map((row, index) => (
+                <div key={`${row.Description}-${index}`} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4 text-sm">
+                  <p className="font-medium">{row.Description}</p>
+                  <p className="mt-1 muted">
+                    {row.Date} | {row.Amount}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -194,7 +334,7 @@ export default function Upload() {
       <div className="panel">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.26em] text-slate-500">Upload result</p>
+            <p className="text-xs uppercase tracking-[0.26em] text-slate-500">Latest result</p>
             <h3 className="text-xl font-semibold">Categorized transactions</h3>
           </div>
           {rows.length > 0 && <span className="pill">{rows.length} rows</span>}
@@ -215,7 +355,7 @@ export default function Upload() {
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={6} className="text-sm muted">
-                    Upload a CSV to see categorized results here.
+                    Upload a CSV or add a manual transaction to see categorized results here.
                   </td>
                 </tr>
               )}
