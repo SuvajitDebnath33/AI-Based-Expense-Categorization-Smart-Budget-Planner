@@ -67,7 +67,7 @@ export default function Auth({ onAuthenticated }: AuthPageProps) {
       onAuthenticated(response.access_token, response.user);
       toast.success(mode === "login" ? "Logged in." : "Account created.");
     } catch (error: any) {
-      toast.error(getAuthErrorMessage(error));
+      toast.error(getAuthErrorMessage(error), { id: "auth-error" });
     } finally {
       setLoading(false);
     }

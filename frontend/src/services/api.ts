@@ -7,12 +7,16 @@ import {
   Budget,
   BudgetInsights,
   BudgetRecommendation,
+  CashflowCalendar,
   CategoryPrediction,
   CategorizeResult,
+  FeedbackInsights,
+  MerchantIntelligence,
   SavingsGoal,
   Transaction,
   UploadResponse,
   UserProfile,
+  WhatIfSimulation,
 } from "../types/transaction";
 
 const api = axios.create({
@@ -84,6 +88,14 @@ export const getForecastAdvanced = async () => (await api.get("/analytics/foreca
 export const getHealthScore = async () => (await api.get("/financial-health-score")).data;
 export const getAiSummary = async () => (await api.get("/ai-summary")).data;
 export const getBudgetInsights = async () => (await api.get<BudgetInsights>("/budget-insights")).data;
+export const getCashflowCalendar = async (days = 30) =>
+  (await api.get<CashflowCalendar>("/analytics/cashflow-calendar", { params: { days } })).data;
+export const getMerchantIntelligence = async () =>
+  (await api.get<MerchantIntelligence>("/analytics/merchant-intelligence")).data;
+export const getFeedbackInsights = async () =>
+  (await api.get<FeedbackInsights>("/analytics/feedback-insights")).data;
+export const runWhatIfSimulation = async (payload: { category: string; spend_delta: number; extra_savings: number }) =>
+  (await api.post<WhatIfSimulation>("/analytics/what-if", payload)).data;
 
 export const predictCategory = async (description: string, amount = 0) =>
   (await api.post<CategoryPrediction>("/ai/predict-category", { description, amount })).data;
@@ -91,7 +103,7 @@ export const predictCategory = async (description: string, amount = 0) =>
 export const categorizeExpense = async (description: string, amount = 0) =>
   (await api.post<CategorizeResult>("/categorize", { description, amount })).data;
 
-export const retrainModel = async (algorithm: "logistic_regression" | "random_forest" = "logistic_regression") =>
+export const retrainModel = async (algorithm: "logistic_regression" | "random_forest" | "lstm" = "logistic_regression") =>
   (await api.post("/ai/retrain-model", { algorithm })).data;
 
 export const listBudgets = async (params?: { month?: number; year?: number; limit?: number; offset?: number }) =>

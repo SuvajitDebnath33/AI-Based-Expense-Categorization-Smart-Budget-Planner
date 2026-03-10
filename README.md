@@ -83,6 +83,12 @@ $env:BACKEND_PORT = "8001"
 uvicorn app.main:app --reload --host 0.0.0.0 --port $env:BACKEND_PORT
 ```
 
+Optional LSTM retraining:
+```powershell
+pip install torch
+```
+Without `torch`, the app still runs normally, but selecting the `lstm` retraining algorithm will return a clear backend error.
+
 ### 3.2 Frontend
 Open another terminal:
 ```powershell
