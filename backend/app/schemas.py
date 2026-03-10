@@ -53,6 +53,86 @@ class BudgetRecommendationOut(BaseModel):
     advice: str
 
 
+class CashflowEventOut(BaseModel):
+    date: date
+    title: str
+    amount: float
+    type: str
+    cadence: str | None = None
+    note: str | None = None
+
+
+class CashflowCalendarOut(BaseModel):
+    anchor_date: date
+    window_days: int
+    expected_income: float
+    expected_expense: float
+    expected_net: float
+    events: list[CashflowEventOut]
+
+
+class MerchantInsightItemOut(BaseModel):
+    merchant: str
+    total_spend: float
+    transaction_count: int
+    average_ticket: float
+    share_of_spend: float
+    last_seen: date
+
+
+class MerchantIntelligenceOut(BaseModel):
+    month: str
+    total_spend: float
+    concentration_share: float
+    repeat_merchant_share: float
+    top_merchants: list[MerchantInsightItemOut]
+    watchlist: list[str]
+
+
+class WhatIfSimulationIn(BaseModel):
+    category: str = Field(min_length=2, max_length=100)
+    spend_delta: float = 0.0
+    extra_savings: float = Field(default=0.0, ge=0)
+
+
+class WhatIfSimulationOut(BaseModel):
+    month: str
+    category: str
+    current_category_spend: float
+    adjusted_category_spend: float
+    current_total_spend: float
+    adjusted_total_spend: float
+    current_remaining_budget: float
+    adjusted_remaining_budget: float
+    forecast_adjusted: float
+    savings_impact: float
+    summary: list[str]
+
+
+class FeedbackCorrectionOut(BaseModel):
+    from_category: str
+    to_category: str
+    count: int
+
+
+class FeedbackRecentOut(BaseModel):
+    transaction_text: str
+    predicted_category: str
+    corrected_category: str
+    timestamp: datetime
+
+
+class FeedbackInsightsOut(BaseModel):
+    total_feedback: int
+    recent_feedback: int
+    low_confidence_transactions: int
+    corrected_transactions: int
+    ready_for_retrain: bool
+    top_corrections: list[FeedbackCorrectionOut]
+    recent_items: list[FeedbackRecentOut]
+    guidance: list[str]
+
+
 class ForecastOut(BaseModel):
     month: str
     predicted_spending: float
@@ -124,7 +204,7 @@ class CategorizeResponse(BaseModel):
 
 
 class RetrainModelIn(BaseModel):
-    algorithm: str = Field(default="logistic_regression", pattern="^(logistic_regression|random_forest)$")
+    algorithm: str = Field(default="logistic_regression", pattern="^(logistic_regression|random_forest|lstm)$")
 
 
 class RetrainModelOut(BaseModel):

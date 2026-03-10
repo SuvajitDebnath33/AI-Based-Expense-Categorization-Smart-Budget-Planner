@@ -29,6 +29,80 @@ export type BudgetRecommendation = {
   advice: string;
 };
 
+export type CashflowEvent = {
+  date: string;
+  title: string;
+  amount: number;
+  type: "income" | "expense" | "goal" | "budget" | string;
+  cadence?: string | null;
+  note?: string | null;
+};
+
+export type CashflowCalendar = {
+  anchor_date: string;
+  window_days: number;
+  expected_income: number;
+  expected_expense: number;
+  expected_net: number;
+  events: CashflowEvent[];
+};
+
+export type MerchantInsightItem = {
+  merchant: string;
+  total_spend: number;
+  transaction_count: number;
+  average_ticket: number;
+  share_of_spend: number;
+  last_seen: string;
+};
+
+export type MerchantIntelligence = {
+  month: string;
+  total_spend: number;
+  concentration_share: number;
+  repeat_merchant_share: number;
+  top_merchants: MerchantInsightItem[];
+  watchlist: string[];
+};
+
+export type WhatIfSimulation = {
+  month: string;
+  category: string;
+  current_category_spend: number;
+  adjusted_category_spend: number;
+  current_total_spend: number;
+  adjusted_total_spend: number;
+  current_remaining_budget: number;
+  adjusted_remaining_budget: number;
+  forecast_adjusted: number;
+  savings_impact: number;
+  summary: string[];
+};
+
+export type FeedbackCorrection = {
+  from_category: string;
+  to_category: string;
+  count: number;
+};
+
+export type FeedbackRecentItem = {
+  transaction_text: string;
+  predicted_category: string;
+  corrected_category: string;
+  timestamp: string;
+};
+
+export type FeedbackInsights = {
+  total_feedback: number;
+  recent_feedback: number;
+  low_confidence_transactions: number;
+  corrected_transactions: number;
+  ready_for_retrain: boolean;
+  top_corrections: FeedbackCorrection[];
+  recent_items: FeedbackRecentItem[];
+  guidance: string[];
+};
+
 export type Budget = {
   id: number;
   user_id: number;
@@ -119,6 +193,28 @@ export type BudgetInsights = {
     month: string;
     predicted_amount: number;
     confidence_interval?: [number, number] | null;
+  };
+  behavioral_forecast: {
+    month: string;
+    anchor_date: string;
+    elapsed_days: number;
+    remaining_days: number;
+    daily_average_spend: number;
+    current_total_spend: number;
+    projected_month_end_spend: number;
+    categories: {
+      category: string;
+      current_spend: number;
+      daily_run_rate: number;
+      projected_spend: number;
+      budget_limit: number;
+      remaining_budget: number;
+      projected_overrun: number;
+      days_to_exceed: number | null;
+      pace_ratio: number;
+    }[];
+    alerts: string[];
+    summary: string[];
   };
   monthly_category_spending: { month: string; category: string; amount: number }[];
   subscriptions: { merchant: string; recurrence: string; average_amount: number }[];

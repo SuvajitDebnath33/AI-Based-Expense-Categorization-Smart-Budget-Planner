@@ -7,6 +7,7 @@ import joblib
 from app.ml.feature_engineering import build_context_from_history, build_feature_record
 from app.ml.merchant_rules import match_merchant_rule, merchant_logo_url
 from app.ml.preprocess import preprocess_description
+from app.ml.sequence_model import SequenceExpenseClassifier
 
 
 UNCERTAIN_THRESHOLD = 0.6
@@ -20,7 +21,15 @@ class PredictionEngine:
 
     def reload_model(self) -> None:
         path = Path(self.model_path)
-        self.model = joblib.load(path) if path.exists() else None
+        if not path.exists():
+            self.model = None
+            return
+
+        loaded = joblib.load(path)
+        if isinstance(loaded, dict) and loaded.get("model_kind") == "lstm":
+            self.model = SequenceExpenseClassifier.from_bundle(loaded)
+            return
+        self.model = loaded
 
     def predict(
         self,

@@ -50,7 +50,7 @@ export default function Upload() {
   const [rows, setRows] = useState<Transaction[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [retraining, setRetraining] = useState<"idle" | "logistic_regression" | "random_forest">("idle");
+  const [retraining, setRetraining] = useState<"idle" | "logistic_regression" | "random_forest" | "lstm">("idle");
   const [dragActive, setDragActive] = useState(false);
   const [manualForm, setManualForm] = useState<ManualFormState>(createInitialManualForm);
   const [manualSubmitting, setManualSubmitting] = useState(false);
@@ -131,7 +131,7 @@ export default function Upload() {
     }
   };
 
-  const handleRetrain = async (algorithm: "logistic_regression" | "random_forest") => {
+  const handleRetrain = async (algorithm: "logistic_regression" | "random_forest" | "lstm") => {
     setRetraining(algorithm);
     try {
       const result = await retrainModel(algorithm);
@@ -207,6 +207,13 @@ export default function Upload() {
               onClick={() => void handleRetrain("random_forest")}
             >
               {retraining === "random_forest" ? "Retraining..." : "Retrain random forest"}
+            </button>
+            <button
+              className="button-secondary"
+              disabled={retraining !== "idle"}
+              onClick={() => void handleRetrain("lstm")}
+            >
+              {retraining === "lstm" ? "Retraining..." : "Retrain LSTM model"}
             </button>
           </div>
 

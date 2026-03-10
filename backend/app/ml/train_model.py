@@ -10,6 +10,7 @@ import joblib
 
 from app.ml.categories import SUPPORTED_CATEGORIES, normalize_category_label
 from app.ml.feature_engineering import build_context_from_history, build_feature_record
+from app.ml.sequence_model import SequenceExpenseClassifier
 
 
 SEED_TRAINING_ROWS = [
@@ -266,8 +267,14 @@ def train_expense_model(
         raise ValueError("At least two distinct categories are required to train the expense model.")
 
     try:
-        model = HybridExpenseClassifier(algorithm=algorithm).fit(features, labels)
-        backend = model.text_embedding_backend
+        if algorithm == "lstm":
+            model = SequenceExpenseClassifier().fit(features, labels)
+            backend = "lstm_sequence"
+        else:
+            model = HybridExpenseClassifier(algorithm=algorithm).fit(features, labels)
+            backend = model.text_embedding_backend
+    except ValueError:
+        raise
     except Exception:
         model = SimpleBayesTextClassifier().fit(features, labels)
         backend = "naive_bayes_fallback"
@@ -286,7 +293,10 @@ def train_expense_model(
 def train_and_save(out_path: Path, rows: list[dict[str, Any]] | None = None, algorithm: str = "logistic_regression") -> dict[str, Any]:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     model, metadata = train_expense_model(rows=rows, algorithm=algorithm)
-    joblib.dump(model, out_path)
+    if isinstance(model, SequenceExpenseClassifier):
+        joblib.dump(model.to_bundle(), out_path)
+    else:
+        joblib.dump(model, out_path)
     metadata["model_path"] = str(out_path)
     return metadata
 

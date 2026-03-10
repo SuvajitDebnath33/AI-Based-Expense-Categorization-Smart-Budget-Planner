@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Transaction
 from app.repositories.analytics_repository import AnalyticsRepository
+from app.schemas import CashflowCalendarOut, FeedbackInsightsOut, MerchantIntelligenceOut, WhatIfSimulationIn, WhatIfSimulationOut
 from app.security.auth import AuthUser, get_current_user
 from app.services.analytics_service import AnalyticsService
 
@@ -180,3 +181,41 @@ def forecast(
     user: AuthUser = Depends(get_current_user),
 ):
     return AnalyticsService(db, user.user_id).forecast()
+
+
+@router.get("/cashflow-calendar", response_model=CashflowCalendarOut)
+def cashflow_calendar(
+    days: int = Query(default=30, ge=7, le=90),
+    db: Session = Depends(get_db),
+    user: AuthUser = Depends(get_current_user),
+):
+    return AnalyticsService(db, user.user_id).cashflow_calendar(days=days)
+
+
+@router.get("/merchant-intelligence", response_model=MerchantIntelligenceOut)
+def merchant_intelligence(
+    db: Session = Depends(get_db),
+    user: AuthUser = Depends(get_current_user),
+):
+    return AnalyticsService(db, user.user_id).merchant_intelligence()
+
+
+@router.post("/what-if", response_model=WhatIfSimulationOut)
+def what_if(
+    payload: WhatIfSimulationIn,
+    db: Session = Depends(get_db),
+    user: AuthUser = Depends(get_current_user),
+):
+    return AnalyticsService(db, user.user_id).what_if_simulation(
+        category=payload.category,
+        spend_delta=payload.spend_delta,
+        extra_savings=payload.extra_savings,
+    )
+
+
+@router.get("/feedback-insights", response_model=FeedbackInsightsOut)
+def feedback_insights(
+    db: Session = Depends(get_db),
+    user: AuthUser = Depends(get_current_user),
+):
+    return AnalyticsService(db, user.user_id).feedback_insights()

@@ -8,7 +8,7 @@ def retrain_model(
     model_path: str,
     algorithm: str = "logistic_regression",
 ) -> dict:
-    supported = {"logistic_regression", "random_forest"}
+    supported = {"logistic_regression", "random_forest", "lstm"}
     if algorithm not in supported:
         raise ValueError(f"Unsupported algorithm '{algorithm}'. Supported values: {', '.join(sorted(supported))}.")
 

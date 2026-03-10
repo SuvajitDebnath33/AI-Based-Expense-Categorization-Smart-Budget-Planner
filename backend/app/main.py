@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from app.config import settings
 from app.database import Base, engine
 from app.routers import ai, alerts, analytics, auth, budget, budgets, forecast, health, intelligence, notifications, savings_goals, transactions
+from app.security.auth import ensure_jwt_dependency
 
 app = FastAPI(title=settings.app_name)
 
@@ -33,6 +34,7 @@ app.include_router(notifications.router, prefix=settings.api_prefix)
 
 @app.on_event("startup")
 def on_startup() -> None:
+    ensure_jwt_dependency()
     Base.metadata.create_all(bind=engine)
 
 

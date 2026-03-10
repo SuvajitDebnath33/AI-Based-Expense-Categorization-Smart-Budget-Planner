@@ -355,6 +355,96 @@ body {
   color: #cbd5e1 !important;
 }
 
+.mini-stat-grid {
+  @apply grid gap-3 sm:grid-cols-3;
+}
+
+.mini-stat {
+  @apply rounded-[20px] border p-4;
+  border-color: rgba(148, 163, 184, 0.14);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.mini-stat-label {
+  @apply text-[11px] font-semibold uppercase tracking-[0.24em];
+  color: #94a3b8;
+}
+
+.mini-stat-value {
+  @apply mt-2 text-2xl font-semibold text-white;
+}
+
+.timeline-list {
+  @apply space-y-3;
+}
+
+.timeline-item {
+  @apply flex items-start gap-4 rounded-[22px] border p-4;
+  border-color: rgba(148, 163, 184, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.timeline-date {
+  @apply min-w-[4.5rem] rounded-2xl px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em];
+  background: rgba(99, 102, 241, 0.16);
+  color: #c7d2fe;
+}
+
+.merchant-row {
+  @apply rounded-[22px] border p-4;
+  border-color: rgba(148, 163, 184, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.merchant-bar {
+  @apply mt-3 h-2 overflow-hidden rounded-full;
+  background: rgba(51, 65, 85, 0.6);
+}
+
+.merchant-bar-fill {
+  @apply h-full rounded-full;
+  background: linear-gradient(90deg, #68e1c2 0%, #56c8ff 100%);
+}
+
+.scenario-card {
+  @apply rounded-[26px] border p-5;
+  border-color: rgba(129, 140, 248, 0.18);
+  background:
+    radial-gradient(circle at top right, rgba(99, 102, 241, 0.16), transparent 35%),
+    rgba(15, 23, 42, 0.76);
+}
+
+.slider {
+  @apply h-2 w-full cursor-pointer appearance-none rounded-full;
+  background: rgba(51, 65, 85, 0.75);
+}
+
+.slider::-webkit-slider-thumb {
+  width: 1rem;
+  height: 1rem;
+  border: 0;
+  border-radius: 9999px;
+  background: #818cf8;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+  -webkit-appearance: none;
+}
+
+.slider::-moz-range-thumb {
+  width: 1rem;
+  height: 1rem;
+  border: 0;
+  border-radius: 9999px;
+  background: #818cf8;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+}
+
+.badge-soft {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+}
+
 @keyframes shimmer {
   100% {
     transform: translateX(100%);

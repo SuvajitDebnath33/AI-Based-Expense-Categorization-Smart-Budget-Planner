@@ -18,6 +18,10 @@ from app.config import settings
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
+JWT_MISSING_MESSAGE = (
+    "PyJWT is not installed in the Python environment running the backend. "
+    "Activate backend/.venv or run `pip install -r backend/requirements.txt`."
+)
 
 
 @dataclass
@@ -25,6 +29,20 @@ class AuthUser:
     user_id: int
     email: str | None = None
     full_name: str | None = None
+
+
+def ensure_jwt_dependency() -> None:
+    if jwt is None:
+        raise RuntimeError(JWT_MISSING_MESSAGE)
+
+
+def _get_jwt_module():
+    if jwt is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=JWT_MISSING_MESSAGE,
+        )
+    return jwt
 
 
 def hash_password(password: str, salt: str | None = None) -> str:
@@ -43,12 +61,7 @@ def verify_password(password: str, encoded: str) -> bool:
 
 
 def create_access_token(user_id: int, email: str, full_name: str) -> str:
-    if jwt is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="JWT dependency missing. Install PyJWT to enable auth tokens.",
-        )
-
+    jwt_module = _get_jwt_module()
     expires_at = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
     payload = {
         "sub": str(user_id),
@@ -57,20 +70,15 @@ def create_access_token(user_id: int, email: str, full_name: str) -> str:
         "full_name": full_name,
         "exp": expires_at,
     }
-    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    return jwt_module.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
 def _decode_user(credentials: HTTPAuthorizationCredentials | None) -> AuthUser | None:
     if credentials is None:
         return None
-    if jwt is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="JWT dependency missing. Install PyJWT to enable auth tokens.",
-        )
-
+    jwt_module = _get_jwt_module()
     try:
-        payload = jwt.decode(credentials.credentials, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        payload = jwt_module.decode(credentials.credentials, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
     except InvalidTokenError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
 
