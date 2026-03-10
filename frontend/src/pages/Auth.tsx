@@ -13,6 +13,9 @@ type ApiValidationIssue = {
 };
 
 const getAuthErrorMessage = (error: any) => {
+  if (error?.code === "ERR_NETWORK") {
+    return "Cannot reach the backend API. Start the backend on http://localhost:8001 using backend/.venv.";
+  }
   const detail = error?.response?.data?.detail;
   if (typeof detail === "string" && detail.trim()) {
     return detail;

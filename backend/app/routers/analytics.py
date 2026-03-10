@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Transaction
 from app.repositories.analytics_repository import AnalyticsRepository
-from app.schemas import CashflowCalendarOut, FeedbackInsightsOut, MerchantIntelligenceOut, WhatIfSimulationIn, WhatIfSimulationOut
+from app.schemas import CashflowCalendarOut, FeedbackInsightsOut, MerchantIntelligenceOut, SavingsForecastOut, WhatIfSimulationIn, WhatIfSimulationOut
 from app.security.auth import AuthUser, get_current_user
 from app.services.analytics_service import AnalyticsService
 
@@ -181,6 +181,14 @@ def forecast(
     user: AuthUser = Depends(get_current_user),
 ):
     return AnalyticsService(db, user.user_id).forecast()
+
+
+@router.get("/savings-forecast", response_model=SavingsForecastOut)
+def savings_forecast(
+    db: Session = Depends(get_db),
+    user: AuthUser = Depends(get_current_user),
+):
+    return AnalyticsService(db, user.user_id).savings_forecast()
 
 
 @router.get("/cashflow-calendar", response_model=CashflowCalendarOut)

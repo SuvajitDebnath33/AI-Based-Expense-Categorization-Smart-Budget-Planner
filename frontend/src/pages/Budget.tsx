@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 
 import MetricCard from "../components/MetricCard";
 import PageHeader from "../components/PageHeader";
+import WishlistPlanner from "../components/WishlistPlanner";
 import { EXPENSE_CATEGORIES } from "../constants/categories";
 import {
   createBudget,
@@ -153,7 +154,13 @@ export default function Budget() {
         <MetricCard label="Budgeted" value={inr(budgetInsights.overview.monthly_budget)} hint="Configured monthly envelope" icon="budget" tone="primary" />
         <MetricCard label="Spent" value={inr(budgetInsights.overview.total_spending)} hint="Current month outflow" icon="wallet" />
         <MetricCard label="Remaining" value={inr(budgetInsights.overview.remaining_budget)} hint="Budget runway left" icon="target" tone="success" />
-        <MetricCard label="Next month forecast" value={inr(budgetInsights.forecast.predicted_amount)} hint="Projected expense trend" icon="trending" tone="warning" />
+        <MetricCard
+          label="Next month savings"
+          value={inr(budgetInsights.savings_forecast.predicted_next_month_savings)}
+          hint={`Projected surplus for ${budgetInsights.savings_forecast.next_month}`}
+          icon="trending"
+          tone="warning"
+        />
       </div>
 
       {budgetInsights.alerts.length > 0 && (
@@ -166,6 +173,10 @@ export default function Budget() {
           </div>
         </div>
       )}
+
+      <div className="panel border-sky-300/20 bg-sky-300/10 text-sm text-sky-50">
+        Budget and savings threshold alerts are also emailed to the address you use to sign in when SMTP is configured on the backend.
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <div className="panel space-y-4">
@@ -203,6 +214,8 @@ export default function Budget() {
           </button>
         </div>
       </div>
+
+      <WishlistPlanner />
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="panel">

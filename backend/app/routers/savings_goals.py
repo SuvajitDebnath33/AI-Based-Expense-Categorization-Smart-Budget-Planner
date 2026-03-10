@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import SavingsGoal
-from app.repositories.notification_repository import NotificationRepository
 from app.repositories.savings_goal_repository import SavingsGoalRepository
 from app.schemas import ApiMessage, SavingsGoalCreateIn, SavingsGoalOut, SavingsGoalProgressIn
 from app.security.auth import AuthUser, get_current_user
@@ -60,7 +59,7 @@ def update_goal_progress(
     db.commit()
     db.refresh(goal)
 
-    notify_savings_milestone(NotificationRepository(db), goal, previous_saved)
+    notify_savings_milestone(db, goal, previous_saved)
     return goal_to_response(db, goal)
 
 

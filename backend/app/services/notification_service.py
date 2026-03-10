@@ -21,7 +21,6 @@ def notify_anomaly(notification_repo: NotificationRepository, user_id: int, tran
         ),
     )
 
-
 def notify_budget_usage_for_category(
     db: Session,
     user_id: int,
@@ -29,7 +28,6 @@ def notify_budget_usage_for_category(
     tx_date: date,
 ) -> None:
     budget_repo = BudgetRepository(db)
-    notification_repo = NotificationRepository(db)
     budgets = (
         db.query(Budget)
         .filter(
@@ -42,4 +40,4 @@ def notify_budget_usage_for_category(
     )
     for budget in budgets:
         payload = budget_to_response(budget_repo, budget)
-        notify_if_budget_threshold_crossed(notification_repo, payload)
+        notify_if_budget_threshold_crossed(db, payload)

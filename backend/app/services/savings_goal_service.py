@@ -2,7 +2,7 @@ from sqlalchemy import case, extract, func
 from sqlalchemy.orm import Session
 
 from app.models import SavingsGoal, Transaction
-from app.repositories.notification_repository import NotificationRepository
+from app.services.notification_dispatcher import create_user_notification
 
 
 def _avg_monthly_net_savings(db: Session, lookback_months: int = 3) -> float:
@@ -52,7 +52,7 @@ def goal_to_response(db: Session, goal: SavingsGoal) -> dict:
 
 
 def notify_savings_milestone(
-    notification_repo: NotificationRepository,
+    db: Session,
     goal: SavingsGoal,
     previous_saved: float,
 ) -> None:
@@ -61,12 +61,30 @@ def notify_savings_milestone(
 
     prev_pct = (previous_saved / goal.target_amount) * 100
     curr_pct = (goal.current_saved / goal.target_amount) * 100
-    milestones = [25, 50, 75, 100]
+    milestones = [50, 75, 90, 100]
 
     for milestone in milestones:
         if prev_pct < milestone <= curr_pct:
-            notification_repo.create(
+            remaining = max(float(goal.target_amount) - float(goal.current_saved), 0.0)
+            if milestone >= 100:
+                subject = "Savings goal reached"
+                message = (
+                    f"Savings goal #{goal.id} reached 100% progress. "
+                    f"You saved INR {float(goal.current_saved):.2f} against your INR {float(goal.target_amount):.2f} target."
+                )
+            else:
+                subject = "Savings target is within reach"
+                message = (
+                    f"Savings goal #{goal.id} reached {milestone}% progress. "
+                    f"Only INR {remaining:.2f} is left before your target date of {goal.target_date.isoformat()}."
+                )
+
+            create_user_notification(
+                db,
                 user_id=goal.user_id,
                 notification_type="savings_milestone",
-                message=f"Savings goal #{goal.id} reached {milestone}% progress.",
+                message=message,
+                email_subject=subject,
+                email_message=message,
+                dedupe_hours=24 * 365,
             )

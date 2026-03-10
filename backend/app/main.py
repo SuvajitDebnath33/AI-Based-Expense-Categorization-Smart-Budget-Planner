@@ -1,12 +1,15 @@
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.database import Base, engine
-from app.routers import ai, alerts, analytics, auth, budget, budgets, forecast, health, intelligence, notifications, savings_goals, transactions
+from app.routers import ai, alerts, analytics, auth, budget, budgets, forecast, health, intelligence, notifications, savings_goals, transactions, wishlists
 from app.security.auth import ensure_jwt_dependency
 
+logger = logging.getLogger(__name__)
 app = FastAPI(title=settings.app_name)
 
 app.add_middleware(
@@ -30,11 +33,15 @@ app.include_router(forecast.router, prefix=settings.api_prefix)
 app.include_router(health.router, prefix=settings.api_prefix)
 app.include_router(savings_goals.router, prefix=settings.api_prefix)
 app.include_router(notifications.router, prefix=settings.api_prefix)
+app.include_router(wishlists.router, prefix=settings.api_prefix)
 
 
 @app.on_event("startup")
 def on_startup() -> None:
-    ensure_jwt_dependency()
+    try:
+        ensure_jwt_dependency()
+    except RuntimeError as exc:
+        logger.warning("JWT dependency check failed at startup: %s", exc)
     Base.metadata.create_all(bind=engine)
 
 

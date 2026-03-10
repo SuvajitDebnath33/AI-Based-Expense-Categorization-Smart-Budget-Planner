@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Budget
 from app.repositories.budget_repository import BudgetRepository
-from app.repositories.notification_repository import NotificationRepository
 from app.schemas import ApiMessage, BudgetBaseIn, BudgetOut, BudgetUpdateIn
 from app.security.auth import AuthUser, get_current_user
 from app.services.budget_service import budget_to_response, notify_if_budget_threshold_crossed
@@ -35,7 +34,7 @@ def create_budget(
     )
     created = repo.create(budget)
     data = budget_to_response(repo, created)
-    notify_if_budget_threshold_crossed(NotificationRepository(db), data)
+    notify_if_budget_threshold_crossed(db, data)
     return data
 
 
@@ -96,7 +95,7 @@ def update_budget(
     db.commit()
     db.refresh(budget)
     data = budget_to_response(repo, budget)
-    notify_if_budget_threshold_crossed(NotificationRepository(db), data)
+    notify_if_budget_threshold_crossed(db, data)
     return data
 
 

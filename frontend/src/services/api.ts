@@ -12,10 +12,14 @@ import {
   CategorizeResult,
   FeedbackInsights,
   MerchantIntelligence,
+  InstantSavingsEntry,
   SavingsGoal,
+  SavingsForecast,
   Transaction,
   UploadResponse,
   UserProfile,
+  WishlistItem,
+  WishlistPlan,
   WhatIfSimulation,
 } from "../types/transaction";
 
@@ -85,6 +89,7 @@ export const getBudgetRecommendations = async () =>
   ).data;
 export const getForecast = async () => (await api.get("/forecast")).data;
 export const getForecastAdvanced = async () => (await api.get("/analytics/forecast")).data;
+export const getSavingsForecast = async () => (await api.get<SavingsForecast>("/analytics/savings-forecast")).data;
 export const getHealthScore = async () => (await api.get("/financial-health-score")).data;
 export const getAiSummary = async () => (await api.get("/ai-summary")).data;
 export const getBudgetInsights = async () => (await api.get<BudgetInsights>("/budget-insights")).data;
@@ -143,6 +148,24 @@ export const updateSavingsGoalProgress = async (goalId: number, current_saved: n
   (await api.patch<SavingsGoal>(`/savings-goals/${goalId}/progress`, { current_saved })).data;
 
 export const deleteSavingsGoal = async (goalId: number) => (await api.delete(`/savings-goals/${goalId}`)).data;
+
+export const listWishlists = async (params?: { limit?: number; offset?: number }) =>
+  (await api.get<WishlistItem[]>("/wishlists", { params })).data;
+
+export const createWishlist = async (payload: { title: string; target_amount: number; priority?: number; notes?: string | null }) =>
+  (await api.post<WishlistItem>("/wishlists", payload)).data;
+
+export const updateWishlist = async (
+  wishlistId: number,
+  payload: Partial<{ title: string; target_amount: number; priority: number; notes: string | null }>,
+) => (await api.patch<WishlistItem>(`/wishlists/${wishlistId}`, payload)).data;
+
+export const deleteWishlist = async (wishlistId: number) => (await api.delete(`/wishlists/${wishlistId}`)).data;
+
+export const getWishlistPlan = async () => (await api.get<WishlistPlan>("/wishlists/recommendations")).data;
+
+export const createInstantSavingsEntry = async (payload: { amount: number; note?: string | null; wishlist_id?: number | null }) =>
+  (await api.post<InstantSavingsEntry>("/wishlists/savings-entries", payload)).data;
 
 export const listNotifications = async (params?: { unread_only?: boolean; limit?: number; offset?: number }) =>
   (await api.get<AppNotification[]>("/notifications", { params })).data;

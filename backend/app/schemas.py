@@ -272,6 +272,104 @@ class SavingsGoalOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class WishlistItemCreateIn(BaseModel):
+    title: str = Field(min_length=2, max_length=150)
+    target_amount: float = Field(gt=0)
+    priority: int = Field(default=3, ge=1, le=5)
+    notes: str | None = Field(default=None, max_length=255)
+
+
+class WishlistItemUpdateIn(BaseModel):
+    title: str | None = Field(default=None, min_length=2, max_length=150)
+    target_amount: float | None = Field(default=None, gt=0)
+    priority: int | None = Field(default=None, ge=1, le=5)
+    notes: str | None = Field(default=None, max_length=255)
+
+
+class WishlistItemOut(BaseModel):
+    id: int
+    user_id: int
+    title: str
+    target_amount: float
+    priority: int
+    notes: str | None
+    allocated_saved: float
+    remaining_target: float
+    completion_percentage: float
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class SavingsForecastOut(BaseModel):
+    current_month: str
+    current_month_income: float
+    current_month_expense: float
+    current_month_savings: float
+    next_month: str
+    predicted_next_month_income: float
+    predicted_next_month_expense: float
+    predicted_next_month_savings: float
+
+
+class WishlistCombinationItemOut(BaseModel):
+    id: int
+    title: str
+    target_amount: float
+    priority: int
+    notes: str | None = None
+    allocated_saved: float = 0.0
+    remaining_target: float = 0.0
+    completion_percentage: float = 0.0
+
+
+class InstantSavingsEntryCreateIn(BaseModel):
+    amount: float = Field(gt=0)
+    note: str | None = Field(default=None, max_length=255)
+    wishlist_id: int | None = None
+
+
+class InstantSavingsEntryOut(BaseModel):
+    id: int
+    user_id: int
+    wishlist_id: int | None
+    wishlist_title: str | None = None
+    amount: float
+    note: str | None = None
+    created_at: datetime
+
+
+class WishlistCombinationOut(BaseModel):
+    combo_key: str
+    horizon: str
+    items: list[WishlistCombinationItemOut]
+    total_cost: float
+    remaining_savings: float
+    utilization: float
+    priority_score: int
+    recommended: bool
+    summary: str
+
+
+class WishlistPlanOut(BaseModel):
+    current_month: str
+    next_month: str
+    current_month_savings: float
+    current_month_transaction_savings: float
+    current_month_instant_savings: float
+    current_month_allocated_savings: float
+    current_month_available_savings: float
+    predicted_next_month_savings: float
+    next_cycle_savings_capacity: float
+    wishlist_count: int
+    considered_wishlist_count: int
+    immediately_affordable: list[WishlistCombinationOut]
+    next_cycle_affordable: list[WishlistCombinationOut]
+    recent_savings_entries: list[InstantSavingsEntryOut]
+    suggestion_summary: list[str]
+
+
 class NotificationOut(BaseModel):
     id: int
     type: str
